@@ -1,14 +1,19 @@
 """ Load the generated random codeword and check vars lists,
-    generate llr in the presence of added noise, 
+    simulate transmission and reception over a BPSK AWGN channel -> LLRs, 
     and decode using PyLDPC decoder
+
+    Notes:
+    - LLR convention: positive LLR indicates bit = 1
+    - BPSK mapping used here is: 0 -> -1, 1 -> +1
+    
 """
 
 import numpy as np
 
-def awgn_llr(codeword, snr_db):
+def awgn_llr(codeword, EbN0_dB):
     x = 2.0 * codeword - 1.0
-    snr = 10 ** (snr_db / 10)
-    sigma = np.sqrt(1 / (2 * snr))
+    EbN0 = 10 ** (EbN0_dB / 10)
+    sigma = np.sqrt(1 / (2 * EbN0))
     y = x + sigma * np.random.randn(len(x))
     llr = 2 * y / (sigma ** 2)
     return llr.astype(np.float32)
@@ -22,7 +27,7 @@ CV7idx = np.load("artifacts/168_83_CV7idx.npy")
 dec = LdpcDecoder(CV6idx, CV7idx)
 
 cw = np.load("artifacts/168_83_cw_example.npy")
-llr = awgn_llr(cw, snr_db = 1)
+llr = awgn_llr(cw, EbN0_dB = 1)
 
 for i in range(12):
     llr, ncheck = dec.do_ldpc_iteration(llr)
